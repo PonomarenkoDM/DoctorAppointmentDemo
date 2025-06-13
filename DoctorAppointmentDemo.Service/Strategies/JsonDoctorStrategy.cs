@@ -7,7 +7,7 @@ namespace MyDoctorAppointment.Service.Strategies
 {
     public class JsonDoctorStrategy : IDoctorDataStrategy
     {
-        private readonly DoctorRepository _repo = new();
+        private readonly GenericRepository<Doctor> _repo = new DoctorRepository();
 
         public Doctor Create(Doctor doctor) => _repo.Create(doctor);
         public Doctor? Get(int id) => _repo.GetById(id);

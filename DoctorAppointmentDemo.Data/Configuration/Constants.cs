@@ -1,15 +1,21 @@
 
+using System;
 using System.IO;
 
 namespace MyDoctorAppointment.Data.Configuration
 {
     public static class Constants
     {
+        private static readonly string BaseDir = AppDomain.CurrentDomain.BaseDirectory;
+
         public static readonly string AppSettingsPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "DoctorAppointmentDemo.Data",
-            "Configuration",
+            BaseDir,
             "appsettings.json"
+        );
+
+        public static readonly string DoctorJsonPath = Path.Combine(
+            BaseDir,
+            "doctors.json"
         );
     }
 }

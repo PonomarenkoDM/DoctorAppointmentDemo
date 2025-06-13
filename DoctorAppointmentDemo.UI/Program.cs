@@ -1,124 +1,109 @@
-﻿using System;
+using MyDoctorAppointment.Domain.Enums;
 using MyDoctorAppointment.Domain.Entities;
-using MyDoctorAppointment.Service.Interfaces;
 using MyDoctorAppointment.Service.Services;
 
-namespace MyDoctorAppointment
+class Program
 {
-    public class DoctorAppointment
+    static void Main()
     {
-        private readonly IDoctorService _doctorService;
+        Console.WriteLine("Оберіть формат збереження:");
+        Console.WriteLine("1 - JSON");
+        Console.WriteLine("2 - XML");
+        Console.Write("Ваш вибір: ");
 
-        public DoctorAppointment()
+        var key = Console.ReadKey().KeyChar;
+        Console.WriteLine();
+
+        BaseTypes type = key switch
         {
-            _doctorService = new DoctorService();
-        }
+            '1' => BaseTypes.Json,
+            '2' => BaseTypes.XML,
+            _ => BaseTypes.Json
+        };
 
-        public void Menu()
+        var doctorService = new DoctorService(type);
+
+        bool exit = false;
+        while (!exit)
         {
-            bool running = true;
+            Console.Clear();
+            Console.WriteLine($"Поточний формат збереження: {type}");
+            Console.WriteLine("Оберіть дію:");
+            Console.WriteLine("1 - Показати всіх лікарів");
+            Console.WriteLine("2 - Додати лікаря");
+            Console.WriteLine("3 - Видалити лікаря");
+            Console.WriteLine("4 - Вийти");
 
-            while (running)
-            {
-                Console.Clear();
-                Console.WriteLine("=== Меню ===");
-                Console.WriteLine("1. Показати список лікарів");
-                Console.WriteLine("2. Додати лікаря");
-                Console.WriteLine("3. Вийти");
-                Console.Write("Оберіть опцію: ");
-
-                if (Enum.TryParse<Domain.Enums.MenuOption>(Console.ReadLine(), out Domain.Enums.MenuOption choice))
-                {
-                    switch (choice)
-                    {
-                        case Domain.Enums.MenuOption.ShowDoctors:
-                            ShowDoctors();
-                            break;
-
-                        case Domain.Enums.MenuOption.AddDoctor:
-                            AddDoctor();
-                            break;
-
-                        case Domain.Enums.MenuOption.Exit:
-                            running = false;
-                            Console.WriteLine("Вихід...");
-                            break;
-
-                        default:
-                            Console.WriteLine("Невідома опція. Спробуйте ще раз.");
-                            break;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Невірний вибір. Введіть число від 1 до 3.");
-                }
-
-                Console.WriteLine("\nНатисніть будь-яку клавішу для продовження...");
-                Console.ReadKey();
-            }
-        }
-
-        private void ShowDoctors()
-        {
-            Console.WriteLine("\nСписок лікарів:");
-            var docs = _doctorService.GetAll();
-               foreach (var doc in docs)
-                {
-                    Console.WriteLine($"Ім'я: {doc.Name}, Прізвище: {doc.Surname}, Досвід: {doc.Experience} років, Тип: {doc.DoctorType}");
-                }
-        }
-
-        private void AddDoctor()
-        {
-            Console.WriteLine("\nДодавання нового лікаря:");
-
-            Console.Write("Введіть ім'я: ");
-            string name = Console.ReadLine();
-
-            Console.Write("Введіть прізвище: ");
-            string surname = Console.ReadLine();
-
-            Console.Write("Введіть досвід (років): ");
-            if (!int.TryParse(Console.ReadLine(), out int experience))
-            {
-                Console.WriteLine("Некоректний ввід! Досвід буде встановлений на 0.");
-                experience = 0;
-            }
-
-            Console.WriteLine("Виберіть тип лікаря:");
-            foreach (var type in Enum.GetValues(typeof(Domain.Enums.DoctorTypes)))
-            {
-                Console.WriteLine($"{(int)type}. {type}");
-            }
             Console.Write("Ваш вибір: ");
+            var action = Console.ReadKey().KeyChar;
+            Console.WriteLine();
 
-            if (Enum.TryParse<Domain.Enums.DoctorTypes>(Console.ReadLine(), out var doctorType))
+            switch (action)
             {
-                var newDoctor = new Doctor
-                {
-                    Name = name,
-                    Surname = surname,
-                    Experience = (byte)experience,
-                    DoctorType = doctorType
-                };
+                case '1':
+                    var doctors = doctorService.GetAll();
+                    Console.WriteLine("Список лікарів:");
+                    foreach (var doc in doctors)
+                    {
+                        Console.WriteLine($"{doc.Id}: {doc.Name} {doc.Surname} ({doc.DoctorType})");
+                    }
+                    break;
 
-                _doctorService.Create(newDoctor);
-                Console.WriteLine("Лікар успішно доданий!");
-            }
-            else
-            {
-                Console.WriteLine("Некоректний вибір типу лікаря. Додавання скасовано.");
-            }
-        }
-    }
+                case '2':
+                    Console.Write("Ім'я: ");
+                    var name = Console.ReadLine();
+                    Console.Write("Прізвище: ");
+                    var surname = Console.ReadLine();
 
-    public static class Program
-    {
-        public static void Main()
-        {
-            var doctorAppointment = new DoctorAppointment();
-            doctorAppointment.Menu();
+                    Console.WriteLine("Оберіть тип лікаря:");
+                    foreach (var value in Enum.GetValues(typeof(DoctorTypes)))
+                    {
+                        Console.WriteLine($"{(int)value} - {value}");
+                    }
+
+                    Console.Write("Ваш вибір: ");
+                    int typeChoice = int.TryParse(Console.ReadLine(), out var val) ? val : 1;
+                    DoctorTypes selectedType = Enum.IsDefined(typeof(DoctorTypes), typeChoice)
+                        ? (DoctorTypes)typeChoice
+                        : DoctorTypes.FamilyDoctor;
+
+                    var newDoctor = new Doctor
+                    {
+                        Name = name ?? "",
+                        Surname = surname ?? "",
+                        Experience = 0,
+                        Salary = 0,
+                        DoctorType = selectedType
+                    };
+
+                    var created = doctorService.Create(newDoctor);
+                    Console.WriteLine($"Лікаря додано з ID: {created.Id}");
+                    break;
+
+                case '3':
+                    Console.Write("Введіть ID лікаря для видалення: ");
+                    if (int.TryParse(Console.ReadLine(), out int idToDelete))
+                    {
+                        bool deleted = doctorService.Delete(idToDelete);
+                        Console.WriteLine(deleted ? "Успішно видалено." : "Лікаря не знайдено.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Невірний ID.");
+                    }
+                    break;
+
+                case '4':
+                    exit = true;
+                    continue;
+
+                default:
+                    Console.WriteLine("Невідома дія.");
+                    break;
+            }
+
+            Console.WriteLine("\nНатисніть будь-яку клавішу для продовження...");
+            Console.ReadKey();
         }
     }
 }
